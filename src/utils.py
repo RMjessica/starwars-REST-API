@@ -1,4 +1,5 @@
 from flask import jsonify, url_for
+from datetime import datetime
 
 class APIException(Exception):
     status_code = 400
@@ -39,3 +40,6 @@ def generate_sitemap(app):
         <p>Start working on your proyect by following the <a href="https://github.com/4GeeksAcademy/flask-rest-hello/blob/master/docs/_QUICK_START.md" target="_blank">Quick Start</a></p>
         <p>Remember to specify a real endpoint path like: </p>
         <ul style="text-align: left;">"""+links_html+"</ul></div>"
+
+def get_current_date():
+    return datetime.now().strftime("%d-%m-%Y")
