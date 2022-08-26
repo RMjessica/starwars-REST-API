@@ -1,9 +1,8 @@
-# StarWars REST API :rocket:
+# Star Wars REST API :rocket:
 
 ## Features
 
 - Integrated with Pipenv for package managing.
-- Fast deloyment to heroku with `$ pipenv run deploy`.
 - SQLAlchemy integration for database abstraction.
 
 ## Installation
