@@ -6,6 +6,7 @@ from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, Character, Planet, Vehicle, Starship, Favorite, Category
+import json
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -42,7 +43,8 @@ def handle_users(user_id=None):
     return jsonify({"msg": "Request not valid"}), 400
 
 
-@app.route('/users/<int:user_id>/favorites', methods=['GET', 'POST'])
+# Favorites
+@app.route('/users/<int:user_id>/favorites', methods=['GET', 'POST', 'DELETE'])
 def handle_favorites(user_id=None):
     if user_id is None:
         return jsonify({"msg": "This endpoint needs a user_id"}), 400
@@ -54,27 +56,47 @@ def handle_favorites(user_id=None):
     if request.method == 'POST':
         body = json.loads(request.data)
 
-        body = {
+        category_id = Category.query.filter_by(
+            category_name=body['category_name']).first()
 
-            x: body[x]
-            for x in [
-                # "user_id",
-                "character_id",
-                "planet_id",
-                "vehicle_id",
-                "starship_id",
-            ]
-        }
-        favorite = Favorite(**body)
+        if category_id is None:
+            return jsonify({"msg": f"{body['category_name']} is not a valid category"}), 400
+
+        favorite = Favorite(
+            user_id=user_id,
+            category_id=category_id.id,
+            category_fk_id=body['category_fk_id']
+        )
+
         db.session.add(favorite)
         db.session.commit()
-        return jsonify({"msg": "Favorite added"}), 200
+
+        return jsonify({
+            "msg": f"Favorite added",
+            "inserted_id": f"{favorite.id}"
+        }), 200
+
+    if request.method == 'DELETE':
+        body = json.loads(request.data)
+
+        category = Category.query.filter_by(
+            category_name=body['category_name']).first()
+
+        if category is None:
+            return jsonify({"msg": f"{body['category_name']} is not a category"}), 400
+
+        db.session.delete(category)
+        db.session.commit()
+
+        return jsonify({
+            "msg": f"Category deleted",
+            "deleted_id": f"{category.id}"
+        }), 200
 
     return jsonify({"msg": f"{request.method}: Request not valid"}), 400
 
+
 # Characters
-
-
 @app.route('/characters', methods=['GET'])
 @app.route('/characters/<int:character_id>', methods=['GET'])
 def handle_characters(character_id=None):
@@ -134,6 +156,25 @@ def handle_starships(starship_id=None):
     starship = Starship.query.filter_by(id=starship_id).first()
     if starship is not None:
         return jsonify(starship.serialize()), 200
+
+    return jsonify({"msg": "Request not valid"}), 400
+
+
+# Category
+@app.route('/category', methods=['GET', 'POST'])
+def handle_category(starship_id=None):
+    if request.method == 'GET':
+        categories = Category.query.all()
+        return jsonify([x.serialize() for x in categories]), 200
+
+    if request.method == 'POST':
+        body = json.loads(request.data)
+        category = Category(category_name=body['category_name'])
+        db.session.add(category)
+
+        db.session.commit()
+
+        return jsonify({"msg": f"Category {category.category_name} added with id {category.id}"}), 200
 
     return jsonify({"msg": "Request not valid"}), 400
 
